@@ -621,13 +621,13 @@
   // ============================================================
   (function backdrop() {
     var PHOTOS = [
-      { src: "photos/01-golden-gate.jpg",   caption: "Golden Gate Bridge — San Francisco, California" },
-      { src: "photos/02-nyc.jpg",           caption: "Manhattan — New York City" },
-      { src: "photos/03-grand-canyon.jpg",  caption: "Grand Canyon — Arizona" },
-      { src: "photos/04-chicago.jpg",       caption: "Chicago — Illinois" },
-      { src: "photos/05-monument-valley.jpg", caption: "Monument Valley — Utah" },
-      { src: "photos/06-new-orleans.jpg",   caption: "French Quarter — New Orleans, Louisiana" },
-      { src: "photos/07-seattle.jpg",       caption: "Seattle — Washington" }
+      { src: "photos/01-golden-gate.jpg",  caption: "Golden Gate Bridge — San Francisco, California" },
+      { src: "photos/02-nyc.jpg",          caption: "Empire State Building — New York City" },
+      { src: "photos/03-grand-canyon.jpg", caption: "Grand Canyon — Arizona" },
+      { src: "photos/04-zion.jpg",         caption: "Angels Landing — Zion National Park, Utah" },
+      { src: "photos/05-chicago.jpg",      caption: "Chicago — Illinois" },
+      { src: "photos/06-new-orleans.jpg",  caption: "Jackson Square — New Orleans, Louisiana" },
+      { src: "photos/07-seattle.jpg",      caption: "Seattle — Washington" }
     ];
     var HOLD = 7000; // ms each photo is shown
     var host = document.getElementById("backdrop");
