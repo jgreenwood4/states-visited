@@ -14,14 +14,15 @@
   --ink:        #ffffff;
   --ink-2:      rgba(255,255,255,.66);
   --ink-3:      rgba(255,255,255,.40);
-  --line:       rgba(255,255,255,.14);
-  --line-2:     rgba(255,255,255,.22);
-  --glass:      rgba(16,17,22,.50);
-  --glass-2:    rgba(10,11,15,.60);
-  --visited:    rgba(255,255,255,.94);
-  --state:      rgba(255,255,255,.13);
-  --state-edge: rgba(255,255,255,.34);
-  --state-hover:rgba(255,255,255,.26);
+  --line:       rgba(255,255,255,.16);
+  --line-2:     rgba(255,255,255,.26);
+  --glass:      rgba(20,22,29,.34);
+  --glass-2:    rgba(17,19,26,.40);
+  --visited:    #ffffff;
+  --visited-edge: rgba(10,12,18,.62);
+  --state:      rgba(255,255,255,.16);
+  --state-edge: rgba(255,255,255,.42);
+  --state-hover:rgba(255,255,255,.30);
   --display: "Clash Display", "Helvetica Neue", sans-serif;
   --sans: "General Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --ease: cubic-bezier(.22, 1, .36, 1);
@@ -65,8 +66,11 @@ body {
 .scrim {
   position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background:
-    linear-gradient(105deg, rgba(6,6,10,.74) 0%, rgba(6,6,10,.40) 40%, rgba(6,6,10,.12) 72%, rgba(6,6,10,.34) 100%),
-    linear-gradient(0deg, rgba(6,6,10,.72) 0%, rgba(6,6,10,0) 28%, rgba(6,6,10,0) 76%, rgba(6,6,10,.42) 100%);
+    /* soft darkening only behind the left panel + bottom caption */
+    linear-gradient(100deg, rgba(5,6,10,.52) 0%, rgba(5,6,10,.18) 30%, rgba(5,6,10,0) 56%),
+    linear-gradient(0deg, rgba(5,6,10,.50) 0%, rgba(5,6,10,0) 22%),
+    /* whisper of overall dimming so white UI never blows out on bright skies */
+    rgba(5,6,10,.10);
 }
 
 /* ---------- Topbar ---------- */
@@ -227,8 +231,9 @@ body {
 .state:focus-visible { stroke: #fff; stroke-width: 1.8; }
 .state.is-visited {
   fill: var(--visited);
-  stroke: #fff;
-  filter: drop-shadow(0 1px 6px rgba(255,255,255,.35));
+  stroke: var(--visited-edge);
+  stroke-width: 1.1;
+  filter: drop-shadow(0 1px 7px rgba(255,255,255,.22));
 }
 .state.just-toggled { animation: pop .5s var(--spring); }
 @keyframes pop { 0%{transform:scale(1)} 45%{transform:scale(1.13)} 100%{transform:scale(1)} }
