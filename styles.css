@@ -227,7 +227,6 @@ body {
   background: var(--paper);
   padding: .9rem 1rem 1rem;
 }
-.fact--wide { grid-column: 1 / -1; }
 .fact dt {
   font-size: .68rem;
   letter-spacing: .14em;

@@ -256,8 +256,6 @@
     document.getElementById("fact-remaining").textContent = String(50 - stateCount);
     document.getElementById("fact-last").textContent =
       lastFips && STATES[lastFips] ? fullName(lastFips) : "—";
-    document.getElementById("fact-dc").textContent =
-      visited[DC_FIPS] ? "Visited ✓" : "Not yet";
 
     // Colophon
     document.getElementById("colophon-count").textContent = String(stateCount);
@@ -268,7 +266,9 @@
     var el = document.getElementById("count-visited");
     if (initial && to === from) { el.textContent = String(to); return; }
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce || from === to) { el.textContent = String(to); return; }
+    // When hidden, requestAnimationFrame is paused — set the value directly so
+    // the counter is never left stale.
+    if (reduce || document.hidden || from === to) { el.textContent = String(to); return; }
     var start = performance.now();
     var dur = 420;
     function frame(now) {
