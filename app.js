@@ -35,7 +35,6 @@
   };
 
   var STORE_KEY = "fifty-states-visited:v1";
-  var THEME_KEY = "fifty-states-theme";
   var SVGNS = "http://www.w3.org/2000/svg";
 
   // ---- State ----
@@ -49,7 +48,7 @@
   // ---- DOM refs ----
   var svg = document.getElementById("map");
   var tooltip = document.getElementById("tooltip");
-  var stage = document.querySelector(".stage");
+  var stage = document.querySelector(".map-card");
 
   // ============================================================
   // Boot
@@ -61,7 +60,7 @@
     })
     .then(buildMap)
     .catch(function (err) {
-      var el = document.getElementById("stage-loading");
+      var el = document.getElementById("map-loading");
       if (el) {
         el.textContent = "Couldn't load the map — run via a local server (see README).";
       }
@@ -221,7 +220,7 @@
   // Render
   // ============================================================
   function render(initial) {
-    var stateCount = 0, areaVisited = 0, lastFips = null, lastTime = 0;
+    var stateCount = 0, areaVisited = 0;
 
     Object.keys(STATES).forEach(function (fips) {
       var on = !!visited[fips];
@@ -230,36 +229,22 @@
       var lbl = labelEls[fips];
       if (lbl) lbl.classList.toggle("is-visited", on);
 
-      if (on) {
-        if (fips !== DC_FIPS) {
-          stateCount++;
-          areaVisited += areaByFips[fips] || 0;
-        }
-        if (visited[fips] > lastTime) { lastTime = visited[fips]; lastFips = fips; }
+      if (on && fips !== DC_FIPS) {
+        stateCount++;
+        areaVisited += areaByFips[fips] || 0;
       }
     });
 
     var pctStates = Math.round((stateCount / 50) * 100);
     var pctLand = areaTotal ? Math.round((areaVisited / areaTotal) * 100) : 0;
 
-    // Big counter (animated count-up)
     tweenCount(lastDisplayedCount, stateCount, initial);
     lastDisplayedCount = stateCount;
 
-    // Meter
     document.getElementById("meter-fill").style.transform =
       "scaleX(" + (stateCount / 50) + ")";
     document.getElementById("pct-states").textContent = pctStates + "%";
     document.getElementById("pct-land").textContent = pctLand + "%";
-
-    // Facts
-    document.getElementById("fact-remaining").textContent = String(50 - stateCount);
-    document.getElementById("fact-last").textContent =
-      lastFips && STATES[lastFips] ? fullName(lastFips) : "—";
-
-    // Colophon
-    document.getElementById("colophon-count").textContent = String(stateCount);
-    document.getElementById("colophon-left").textContent = String(50 - stateCount);
   }
 
   function tweenCount(from, to, initial) {
@@ -632,23 +617,73 @@
   })();
 
   // ============================================================
-  // Theme
+  // Backdrop — rotating landmark photography
   // ============================================================
-  (function initTheme() {
-    var saved = localStorage.getItem(THEME_KEY);
-    if (saved) document.body.dataset.theme = saved;
-    syncThemeLabel();
+  (function backdrop() {
+    var PHOTOS = [
+      { src: "photos/01-golden-gate.jpg",   caption: "Golden Gate Bridge — San Francisco, California" },
+      { src: "photos/02-nyc.jpg",           caption: "Manhattan — New York City" },
+      { src: "photos/03-grand-canyon.jpg",  caption: "Grand Canyon — Arizona" },
+      { src: "photos/04-chicago.jpg",       caption: "Chicago — Illinois" },
+      { src: "photos/05-monument-valley.jpg", caption: "Monument Valley — Utah" },
+      { src: "photos/06-new-orleans.jpg",   caption: "French Quarter — New Orleans, Louisiana" },
+      { src: "photos/07-seattle.jpg",       caption: "Seattle — Washington" }
+    ];
+    var HOLD = 7000; // ms each photo is shown
+    var host = document.getElementById("backdrop");
+    var captionEl = document.getElementById("photo-caption");
+    if (!host) return;
+
+    // Start from a different photo each visit so it doesn't feel canned.
+    var order = PHOTOS.map(function (_, i) { return i; });
+    var idx = Math.floor(Math.random() * order.length);
+    var slides = [];
+
+    function makeSlide(i) {
+      var s = document.createElement("div");
+      s.className = "slide";
+      s.style.backgroundImage = "url('" + PHOTOS[i].src + "')";
+      host.appendChild(s);
+      return s;
+    }
+
+    function show(i) {
+      // Build the slide on demand and keep at most two in the DOM (current + prev).
+      var next = makeSlide(i);
+      // force layout so the opacity transition runs
+      void next.offsetWidth;
+      slides.forEach(function (s) { s.classList.remove("is-active"); });
+      next.classList.add("is-active");
+      slides.push(next);
+      while (slides.length > 2) {
+        var old = slides.shift();
+        if (old && old.parentNode) old.parentNode.removeChild(old);
+      }
+      setCaption(PHOTOS[i].caption);
+    }
+
+    function setCaption(text) {
+      if (!captionEl) return;
+      captionEl.style.opacity = "0";
+      setTimeout(function () {
+        captionEl.textContent = text;
+        captionEl.style.opacity = "1";
+      }, 280);
+    }
+
+    // Preload images so cross-fades are seamless.
+    PHOTOS.forEach(function (p) { var im = new Image(); im.src = p.src; });
+
+    show(idx);
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduce && PHOTOS.length > 1) {
+      setInterval(function () {
+        if (document.hidden) return; // don't churn while backgrounded
+        idx = (idx + 1) % PHOTOS.length;
+        show(idx);
+      }, HOLD);
+    }
   })();
-  document.getElementById("theme-toggle").addEventListener("click", function () {
-    var next = document.body.dataset.theme === "dark" ? "light" : "dark";
-    document.body.dataset.theme = next;
-    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
-    syncThemeLabel();
-  });
-  function syncThemeLabel() {
-    var dark = document.body.dataset.theme === "dark";
-    document.querySelector(".theme-toggle__label").textContent = dark ? "Light" : "Dark";
-  }
 
   // ============================================================
   // Toast
