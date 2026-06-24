@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fifty — A map of the states I've set foot in</title>
+  <meta name="description" content="An interactive map tracking which of the fifty United States I've visited." />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-theme="light">
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="masthead">
+    <div class="masthead__row">
+      <span class="eyebrow">An ongoing field report</span>
+      <button id="theme-toggle" class="ghost-btn" type="button" aria-label="Toggle dark mode" title="Toggle theme">
+        <span class="theme-toggle__dot"></span>
+        <span class="theme-toggle__label">Dark</span>
+      </button>
+    </div>
+    <h1 class="title">
+      <span class="title__line">The <em>Fifty</em>.</span>
+      <span class="title__sub">States I&rsquo;ve set foot in.</span>
+    </h1>
+  </header>
+
+  <main class="layout">
+    <!-- LEFT: the ledger -->
+    <section class="ledger" aria-label="Progress and statistics">
+      <div class="counter">
+        <div class="counter__big">
+          <span id="count-visited" class="counter__num" aria-live="polite">0</span>
+          <span class="counter__divider">/</span>
+          <span class="counter__total">50</span>
+        </div>
+        <p class="counter__caption">states explored</p>
+      </div>
+
+      <div class="meter" role="img" aria-label="Progress meter">
+        <div class="meter__track">
+          <div id="meter-fill" class="meter__fill" style="transform: scaleX(0)"></div>
+        </div>
+        <div class="meter__legend">
+          <span><span id="pct-states">0%</span> of states</span>
+          <span><span id="pct-land">0%</span> of the land</span>
+        </div>
+      </div>
+
+      <dl class="facts">
+        <div class="fact">
+          <dt>Remaining</dt>
+          <dd id="fact-remaining">50</dd>
+        </div>
+        <div class="fact">
+          <dt>Last toggled</dt>
+          <dd id="fact-last">&mdash;</dd>
+        </div>
+        <div class="fact fact--wide">
+          <dt>District of Columbia</dt>
+          <dd id="fact-dc">Not yet</dd>
+        </div>
+      </dl>
+
+      <div class="controls">
+        <button id="btn-export" class="btn" type="button">Export backup</button>
+        <button id="btn-import" class="btn" type="button">Import backup</button>
+        <button id="btn-reset" class="btn btn--quiet" type="button">Reset</button>
+        <input id="file-import" type="file" accept="application/json,.json" hidden />
+      </div>
+
+      <p class="hint">Click a state to toggle it. Your progress saves automatically in this browser.</p>
+    </section>
+
+    <!-- RIGHT: the map -->
+    <section class="stage" aria-label="Map of the United States">
+      <div class="stage__inner">
+        <svg id="map" viewBox="0 0 975 610" role="group" aria-label="Click states to mark them visited" preserveAspectRatio="xMidYMid meet"></svg>
+        <div id="tooltip" class="tooltip" role="status" aria-hidden="true"></div>
+      </div>
+      <p class="stage__loading" id="stage-loading">Drawing the map&hellip;</p>
+    </section>
+  </main>
+
+  <footer class="colophon">
+    <span>Built by hand &middot; geography by U.S. Census via <em>us-atlas</em></span>
+    <span class="colophon__count"><span id="colophon-count">0</span> down, <span id="colophon-left">50</span> to go</span>
+  </footer>
+
+  <!-- Self-contained: no external network calls at runtime -->
+  <script src="vendor/d3-array.min.js"></script>
+  <script src="vendor/d3-geo.min.js"></script>
+  <script src="vendor/topojson-client.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
