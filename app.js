@@ -106,6 +106,7 @@
 
     stage.classList.add("is-ready");
     render(true);
+    Sync.boot();
   }
 
   function drawState(f, path, idx) {
@@ -193,6 +194,7 @@
     }
     saveVisited();
     render(false);
+    Sync.queuePush();
   }
 
   function loadVisited() {
@@ -360,6 +362,7 @@
         saveVisited();
         lastDisplayedCount = 0;
         render(false);
+        Sync.queuePush();
         toast("Backup restored");
       } catch (e) {
         toast("That file didn't look right");
@@ -376,9 +379,257 @@
       saveVisited();
       lastDisplayedCount = 0;
       render(false);
+      Sync.queuePush();
       toast("Map cleared");
     }
   });
+
+  // ============================================================
+  // Sync — store the map in a private GitHub gist
+  // ============================================================
+  var Sync = (function () {
+    var TOKEN_KEY = "fifty-gh-token";
+    var GIST_KEY = "fifty-gist-id";
+    var FILE = "visited.json";
+    var MARKER = "[fifty-states-visited:v1]";
+    var DESC = "🗺️ Fifty — states I've visited " + MARKER;
+
+    var token = localStorage.getItem(TOKEN_KEY) || "";
+    var gistId = localStorage.getItem(GIST_KEY) || "";
+    var pushTimer = null;
+    var pushing = false;
+    var pushAgain = false;
+
+    // ---- DOM ----
+    var pill = document.getElementById("sync-pill");
+    var pillLabel = document.getElementById("sync-label");
+    var pillAction = document.getElementById("sync-action");
+    var dialog = document.getElementById("sync-dialog");
+    var msgEl = document.getElementById("dialog-msg");
+    var input = document.getElementById("token-input");
+    var connectBtn = document.getElementById("dialog-connect");
+    var disconnectBtn = document.getElementById("dialog-disconnect");
+    var gistLink = document.getElementById("dialog-gist-link");
+
+    // ---- status pill ----
+    function setStatus(status, label) {
+      pill.dataset.status = status;
+      pillLabel.textContent = label;
+      pillAction.textContent = status === "local" ? "Connect →" : "Manage";
+    }
+
+    function refreshPill() {
+      if (!token) { setStatus("local", "Local only"); return; }
+      setStatus("synced", "Synced");
+    }
+
+    // ---- GitHub API ----
+    function api(method, path, body) {
+      return fetch("https://api.github.com" + path, {
+        method: method,
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Accept": "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28"
+        },
+        body: body ? JSON.stringify(body) : undefined
+      }).then(function (r) {
+        if (!r.ok) {
+          var err = new Error("GitHub " + r.status);
+          err.status = r.status;
+          return r.text().then(function (t) { err.body = t; throw err; });
+        }
+        return r.status === 204 ? null : r.json();
+      });
+    }
+
+    function serialize() {
+      return JSON.stringify({
+        app: "fifty-states-visited",
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        visited: visited
+      }, null, 2);
+    }
+
+    function adopt(content) {
+      try {
+        var data = JSON.parse(content);
+        var inc = data.visited || {};
+        var clean = {};
+        Object.keys(inc).forEach(function (k) {
+          if (STATES[k]) clean[k] = inc[k] === true ? Date.now() : inc[k];
+        });
+        visited = clean;
+        saveVisited();
+        lastDisplayedCount = 0;
+        render(false);
+        return true;
+      } catch (e) { return false; }
+    }
+
+    // ---- gist discovery / pull / push ----
+    function findGist() {
+      return api("GET", "/gists?per_page=100").then(function (list) {
+        var match = (list || []).filter(function (g) {
+          return g.description && g.description.indexOf(MARKER) !== -1 && g.files && g.files[FILE];
+        });
+        match.sort(function (a, b) {
+          return new Date(b.updated_at) - new Date(a.updated_at);
+        });
+        return match[0] || null;
+      });
+    }
+
+    function createGist() {
+      var files = {}; files[FILE] = { content: serialize() };
+      return api("POST", "/gists", {
+        description: DESC, public: false, files: files
+      });
+    }
+
+    function pull() {
+      if (!gistId) return Promise.resolve(false);
+      return api("GET", "/gists/" + gistId).then(function (g) {
+        var f = g.files && g.files[FILE];
+        if (!f) return false;
+        // Large files come back truncated with a raw_url; ours never is.
+        if (f.truncated && f.raw_url) {
+          return fetch(f.raw_url).then(function (r) { return r.text(); }).then(adopt);
+        }
+        return adopt(f.content);
+      });
+    }
+
+    function push() {
+      if (!token) return Promise.resolve();
+      if (pushing) { pushAgain = true; return Promise.resolve(); }
+      pushing = true;
+      setStatus("saving", "Saving…");
+
+      var ensure = gistId
+        ? api("PATCH", "/gists/" + gistId, (function () {
+            var f = {}; f[FILE] = { content: serialize() }; return { files: f };
+          })())
+        : createGist().then(function (g) {
+            gistId = g.id;
+            localStorage.setItem(GIST_KEY, gistId);
+            return g;
+          });
+
+      return ensure.then(function () {
+        setStatus("synced", "Synced");
+      }).catch(function (err) {
+        if (err.status === 401) { setStatus("error", "Token expired"); }
+        else if (err.status === 404) { // gist deleted — recreate next time
+          gistId = ""; localStorage.removeItem(GIST_KEY);
+          setStatus("error", "Sync error");
+        } else { setStatus("offline", "Offline — saved locally"); }
+        console.warn("[Fifty] push failed:", err);
+      }).then(function () {
+        pushing = false;
+        if (pushAgain) { pushAgain = false; return push(); }
+      });
+    }
+
+    // ---- public ----
+    function queuePush() {
+      if (!token) return;
+      setStatus("saving", "Saving…");
+      clearTimeout(pushTimer);
+      pushTimer = setTimeout(push, 900);
+    }
+
+    function boot() {
+      refreshPill();
+      if (!token) return;
+      setStatus("loading", "Syncing…");
+      var step = gistId ? pull() : findGist().then(function (g) {
+        if (!g) return push(); // first time on this account
+        gistId = g.id;
+        localStorage.setItem(GIST_KEY, gistId);
+        return pull();
+      });
+      step.then(function () { refreshPill(); }).catch(function (err) {
+        if (err.status === 401) setStatus("error", "Token expired");
+        else setStatus("offline", "Offline — local copy");
+        console.warn("[Fifty] sync boot failed:", err);
+      });
+    }
+
+    function connect(newToken) {
+      token = newToken.trim();
+      if (!token) { showMsg("Paste a token first.", "error"); return; }
+      localStorage.setItem(TOKEN_KEY, token);
+      showMsg("Connecting…", "");
+      setStatus("loading", "Connecting…");
+      findGist().then(function (g) {
+        if (g) {
+          gistId = g.id;
+          localStorage.setItem(GIST_KEY, gistId);
+          return pull().then(function () { return g; });
+        }
+        return createGist().then(function (g2) {
+          gistId = g2.id;
+          localStorage.setItem(GIST_KEY, gistId);
+          return g2;
+        });
+      }).then(function (g) {
+        setStatus("synced", "Synced");
+        showMsg("Connected — your map now syncs.", "ok");
+        renderDialogState();
+        toast("Sync connected");
+      }).catch(function (err) {
+        token = ""; localStorage.removeItem(TOKEN_KEY);
+        setStatus("local", "Local only");
+        if (err.status === 401) showMsg("That token was rejected. Check it has the gist scope.", "error");
+        else showMsg("Couldn't reach GitHub. Check your connection and try again.", "error");
+        console.warn("[Fifty] connect failed:", err);
+      });
+    }
+
+    function disconnect() {
+      token = ""; gistId = "";
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(GIST_KEY);
+      setStatus("local", "Local only");
+      showMsg("Disconnected. Your map stays in this browser.", "");
+      renderDialogState();
+      toast("Sync disconnected");
+    }
+
+    // ---- dialog wiring ----
+    function showMsg(text, kind) {
+      msgEl.textContent = text;
+      msgEl.className = "dialog__msg" + (kind ? " is-" + kind : "");
+    }
+    function renderDialogState() {
+      var connected = !!token;
+      disconnectBtn.hidden = !connected;
+      connectBtn.textContent = connected ? "Update token" : "Connect";
+      if (connected && gistId) {
+        gistLink.hidden = false;
+        gistLink.href = "https://gist.github.com/" + gistId;
+      } else {
+        gistLink.hidden = true;
+      }
+      input.value = "";
+    }
+
+    pill.addEventListener("click", function () {
+      showMsg("", "");
+      renderDialogState();
+      if (typeof dialog.showModal === "function") dialog.showModal();
+      else dialog.setAttribute("open", "");
+    });
+    connectBtn.addEventListener("click", function () { connect(input.value); });
+    disconnectBtn.addEventListener("click", disconnect);
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); connect(input.value); }
+    });
+
+    return { boot: boot, queuePush: queuePush };
+  })();
 
   // ============================================================
   // Theme

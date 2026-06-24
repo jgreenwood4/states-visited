@@ -63,6 +63,12 @@
         </div>
       </dl>
 
+      <button id="sync-pill" class="sync-pill" type="button" data-status="local" aria-haspopup="dialog">
+        <span class="sync-pill__dot"></span>
+        <span class="sync-pill__label" id="sync-label">Local only</span>
+        <span class="sync-pill__action" id="sync-action">Connect&nbsp;&rarr;</span>
+      </button>
+
       <div class="controls">
         <button id="btn-export" class="btn" type="button">Export backup</button>
         <button id="btn-import" class="btn" type="button">Import backup</button>
@@ -70,7 +76,7 @@
         <input id="file-import" type="file" accept="application/json,.json" hidden />
       </div>
 
-      <p class="hint">Click a state to toggle it. Your progress saves automatically in this browser.</p>
+      <p class="hint">Click a state to toggle it. Connect a GitHub gist to sync across devices &mdash; otherwise progress saves in this browser.</p>
     </section>
 
     <!-- RIGHT: the map -->
@@ -87,6 +93,50 @@
     <span>Built by hand &middot; geography by U.S. Census via <em>us-atlas</em></span>
     <span class="colophon__count"><span id="colophon-count">0</span> down, <span id="colophon-left">50</span> to go</span>
   </footer>
+
+  <!-- Sync setup dialog -->
+  <dialog id="sync-dialog" class="dialog">
+    <form method="dialog" class="dialog__form">
+      <header class="dialog__head">
+        <h2 class="dialog__title">Sync across devices</h2>
+        <button class="dialog__close" value="cancel" aria-label="Close">&times;</button>
+      </header>
+
+      <p class="dialog__lede">
+        Save your map to a <strong>private GitHub gist</strong> so it follows you to every
+        device. Paste the same token anywhere and it syncs automatically.
+      </p>
+
+      <ol class="dialog__steps">
+        <li>
+          <a id="token-link" href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Fifty%20states%20tracker" target="_blank" rel="noopener">
+            Create a GitHub token &rarr;
+          </a>
+          <span class="dialog__note">Scope is pre-set to <code>gist</code> only &mdash; it can&rsquo;t touch your repos. Set <em>No expiration</em> if you want it to keep working.</span>
+        </li>
+        <li>
+          <label class="dialog__field">
+            Paste the token here
+            <input id="token-input" type="password" autocomplete="off" spellcheck="false"
+                   placeholder="ghp_&hellip; or github_pat_&hellip;" />
+          </label>
+        </li>
+      </ol>
+
+      <p id="dialog-msg" class="dialog__msg" role="status"></p>
+
+      <div class="dialog__actions">
+        <button id="dialog-connect" class="btn" type="button">Connect</button>
+        <button id="dialog-disconnect" class="btn btn--quiet" type="button" hidden>Disconnect</button>
+        <a id="dialog-gist-link" class="dialog__gistlink" href="#" target="_blank" rel="noopener" hidden>View gist &rarr;</a>
+      </div>
+
+      <p class="dialog__fine">
+        Your token is stored only in this browser&rsquo;s local storage and sent solely to
+        <code>api.github.com</code>. Disconnect any time &mdash; or revoke it from GitHub settings.
+      </p>
+    </form>
+  </dialog>
 
   <!-- Self-contained: no external network calls at runtime -->
   <script src="vendor/d3-array.min.js"></script>
