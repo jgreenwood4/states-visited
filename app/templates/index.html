@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Your map — Fifty{% endblock %}
+
+{% block body %}
+<header class="topbar">
+  <div class="wordmark">Fifty</div>
+  <div class="user-pill">
+    <span class="pill__dot"></span>
+    <span class="user-pill__name">{{ current_user.username }}</span>
+    <span class="pill__sep" aria-hidden="true"></span>
+    <a class="user-pill__action" href="{{ url_for('auth.logout') }}">Log out</a>
+  </div>
+</header>
+
+<main class="app">
+  <!-- Progress panel -->
+  <section class="panel" aria-label="Your progress">
+    <p class="eyebrow">United States of America</p>
+
+    <div class="hero">
+      <span class="hero__num" id="count-visited" aria-live="polite">0</span>
+      <span class="hero__total">/&thinsp;50</span>
+    </div>
+    <p class="hero__label">states visited</p>
+
+    <div class="meter" role="img" aria-label="Progress">
+      <div class="meter__fill" id="meter-fill" style="transform: scaleX(0)"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat__val" id="pct-states">0%</span>
+        <span class="stat__key">of the country</span>
+      </div>
+      <div class="stat">
+        <span class="stat__val" id="pct-land">0%</span>
+        <span class="stat__key">by land area</span>
+      </div>
+    </div>
+
+    <p class="tip">Tap a state to mark where you&rsquo;ve been. Your map is private to your account.</p>
+  </section>
+
+  <!-- Map -->
+  <section class="map-card" aria-label="Map of the United States">
+    <svg id="map" viewBox="0 0 975 610" preserveAspectRatio="xMidYMid meet" role="group" aria-label="Click states to mark them visited"></svg>
+    <div id="tooltip" class="tooltip" role="status" aria-hidden="true"></div>
+    <p class="map-loading" id="map-loading">Drawing the map&hellip;</p>
+  </section>
+</main>
+
+<footer class="caption-bar">
+  <p class="caption" id="photo-caption">&nbsp;</p>
+  <a class="credit" href="{{ url_for('static', filename='photos/CREDITS.md') }}" target="_blank" rel="noopener">Photography</a>
+</footer>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/d3-array.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/d3-geo.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/topojson-client.min.js') }}"></script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endblock %}

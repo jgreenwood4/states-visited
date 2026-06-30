@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "fifty",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "4178"],
-      "port": 4178
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": ["wsgi.py"],
+      "port": 5000,
+      "autoPort": true
     }
   ]
 }

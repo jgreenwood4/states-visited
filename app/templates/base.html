@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Fifty — states I've visited{% endblock %}</title>
+  <meta name="description" content="An interactive map tracking which of the fifty United States you've visited." />
+  <meta name="theme-color" content="#0b0b0f" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230b0b0f'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Georgia,serif' font-weight='700'>50</text></svg>" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <!-- Full-bleed rotating photography -->
+  <div class="backdrop" id="backdrop" aria-hidden="true"></div>
+  <div class="scrim" aria-hidden="true"></div>
+
+  {% block body %}{% endblock %}
+
+  <script src="{{ url_for('static', filename='backdrop.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
