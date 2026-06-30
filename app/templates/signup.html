@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Sign up — Fifty{% endblock %}
+
+{% block body %}
+<main class="auth">
+  <section class="auth-card">
+    <p class="eyebrow">Fifty</p>
+    <h1 class="auth-card__title">Create your map</h1>
+    <p class="auth-card__lede">Sign up to start marking states you've visited.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <p class="auth-msg is-{{ category }}">{{ message }}</p>
+      {% endfor %}
+    {% endwith %}
+
+    <form class="auth-form" method="post" action="{{ url_for('auth.signup') }}">
+      <label class="auth-field">Username
+        <input name="username" type="text" autocomplete="username" required autofocus />
+      </label>
+      <label class="auth-field">Password
+        <input name="password" type="password" autocomplete="new-password" required />
+        <span class="auth-hint">At least 8 characters.</span>
+      </label>
+      <button class="btn" type="submit">Sign up</button>
+    </form>
+
+    <p class="auth-alt">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+  </section>
+</main>
+{% endblock %}
